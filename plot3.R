@@ -45,45 +45,39 @@ data <- read.table("data/household_power_consumption.txt",
                    skip = nbRowsToSkip,
                    nrows = nbRowsToRead)                        ## number of rows to read
 
+## it is unconvenient to have date and time on separate columns:
+## combine them into one single POSIXlt value, and put this
+## in a new column named 'DateAndTime'
+data$DateAndTime <- strptime(paste(data$Date, data$Time), "%d/%m/%Y %H:%M:%S")
 
 
 
 ## open the output device
 png(file = "plot3.png", width = 480, height = 480)              ## plot to a 480x480 PNG file
 
+## as suggested in the discussion forum (https://class.coursera.org/exdata-015/forum/thread?thread_id=18),
+## temporarily change the local for displaying the date and time
+myLocale <- Sys.getlocale('LC_TIME')
+Sys.setlocale('LC_TIME', 'English')
+
 ## plot the three sub-meterings wrt the time
 colors <- c("black", "red", "blue")
-plot(1:nrow(data),                                              ## one X position per data row = per minute
+plot(data$DateAndTime,                                          ## one X position per data row = per minute
      data$Sub_metering_1,                                       ## put Sub_metering_1 along the Y axis
      "l",                                                       ## display as connected lines
      col = colors[1],                                           ## use the first color
      xlab = "",                                                 ## no label along the X axis
-     xaxt="n",                                                  ## no ticks along the X axis
      ylab="Energy sub metering")                                ## the label along the Y axis
 
 ## add lines with the other column data, using the other colors
-lines(1:nrow(data),data$Sub_metering_2, col = colors[2])
-lines(1:nrow(data),data$Sub_metering_3, col = colors[3])
+lines(data$DateAndTime, data$Sub_metering_2, col = colors[2])
+lines(data$DateAndTime, data$Sub_metering_3, col = colors[3])
 
 ## finally, add the legend
 legend("topright", lty = 1, col = colors, legend = names(data)[7:9])
 
-
-## the abreviated named of the weekdays. As my locale is not
-## English/US, 'format(startDate, "%A")' doesn't work like asked
-weekDays <- c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-
-## get the date of the first item in the table
-startDate <- as.Date(data[1, 1], "%d/%m/%Y")
-## get the weekday of the first displayed day, 0 being Sunday
-startWday <- as.POSIXlt(startDate)$wday
-
-# plot the specific time X axis
-axis(1,                                                         ## 1 = bottom = X axis
-     at= c(1, 1 + 24*60, 1 + 2*24*60),                          ## plot at these positons, in minutes
-     labels = c(weekDays[(startWday %% 7) + 1],                 ## the corresponding labels
-                weekDays[(startWday %% 7) + 2],
-                weekDays[(startWday %% 7) + 3]))
+## get my locale back!
+Sys.setlocale('LC_TIME', myLocale)
 
 ## properly close the output device
 dev.off()
